@@ -6,7 +6,7 @@ $one = pixman_fixed_1;
 
 function px_a8_sum(pixman_image $img): int
 {
-    return array_sum(unpack('C*', pixman_image_get_data($img)));
+    return array_sum(unpack('C*', pixman_image_get_data($img, copy: true)));
 }
 
 it('rasterises a trapezoid into an a8 image', function () use ($one): void {
@@ -15,7 +15,7 @@ it('rasterises a trapezoid into an a8 image', function () use ($one): void {
         new pixman_line_fixed(new pixman_point_fixed(0, 0), new pixman_point_fixed(0, 4 * $one)),
         new pixman_line_fixed(new pixman_point_fixed(2 * $one, 0), new pixman_point_fixed(2 * $one, 4 * $one)));
     pixman_rasterize_trapezoid($mask, $trap, 0, 0);
-    $rows = str_split(pixman_image_get_data($mask), 4);
+    $rows = str_split(pixman_image_get_data($mask, copy: true), 4);
     expect($rows[0])->toBe("\xff\xff\x00\x00");
 
     $m2 = pixman_image_create_bits(PIXMAN_a8, 4, 4, null, 0);
@@ -61,7 +61,7 @@ it('initialises, steps and rasterises edges', function () use ($one): void {
 
     $mask = pixman_image_create_bits(PIXMAN_a8, 4, 4, null, 0);
     pixman_rasterize_edges($mask, $l, $r, $t, $b);
-    expect(str_split(pixman_image_get_data($mask), 4))->toBe(["\xff\xff\x00\x00", "\xff\xff\x00\x00", "\0\0\0\0", "\0\0\0\0"])
+    expect(str_split(pixman_image_get_data($mask, copy: true), 4))->toBe(["\xff\xff\x00\x00", "\xff\xff\x00\x00", "\0\0\0\0", "\0\0\0\0"])
         ->and(fn () => pixman_rasterize_edges($mask, $l, $r, 0, $b))->toThrow(ValueError::class, 'sample row')
         ->and(fn () => pixman_rasterize_edges($mask, $l, $r, $t, pixman_sample_floor_y(9 * $one, 8)))->toThrow(ValueError::class, 'inside the image');
 

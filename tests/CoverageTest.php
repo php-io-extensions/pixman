@@ -10,5 +10,5 @@ it('binds every PIXMAN_API function in pixman.h but the one the spec excludes', 
 
     expect(count($declared))->toBe(179)
         ->and(array_values(array_diff($declared, $excluded, get_extension_funcs('pixman'))))->toBe([])
-        ->and(array_values(array_diff(get_extension_funcs('pixman'), $declared, ['pixman_image_get_data_address'])))->toBe([]);
+        ->and(array_values(array_diff(get_extension_funcs('pixman'), $declared)))->toBe([]);
 });

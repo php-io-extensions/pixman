@@ -10,9 +10,9 @@ function pixman_image_create_radial_gradient(pixman_point_fixed $inner, pixman_p
 
 function pixman_image_create_conical_gradient(pixman_point_fixed $center, int $angle, array $stops, int $n_stops): ?pixman_image {}
 
-function pixman_image_create_bits(int $format, int $width, int $height, ?string $bits, int $rowstride_bytes): ?pixman_image {}
+function pixman_image_create_bits(int $format, int $width, int $height, string|int|null $bits, int $rowstride_bytes): ?pixman_image {}
 
-function pixman_image_create_bits_no_clear(int $format, int $width, int $height, ?string $bits, int $rowstride_bytes): ?pixman_image {}
+function pixman_image_create_bits_no_clear(int $format, int $width, int $height, string|int|null $bits, int $rowstride_bytes): ?pixman_image {}
 
 function pixman_image_ref(pixman_image $image): pixman_image {}
 
@@ -52,10 +52,9 @@ function pixman_image_set_accessors(pixman_image $image, ?callable $read_func, ?
 
 function pixman_image_set_indexed(pixman_image $image, ?pixman_indexed $indexed): void {}
 
-function pixman_image_get_data(pixman_image $image): ?string {}
+/** The image's bits as C returns them: the address (0 for a non-bits image), valid while the image lives. With $copy, a string copy of stride x height bytes (null for a non-bits image). */
+function pixman_image_get_data(pixman_image $image, bool $copy = false): string|int|null {}
 
-/** Binding addition: the address pixman_image_get_data() returns in C (0 for a non-bits image). Valid while the image lives. */
-function pixman_image_get_data_address(pixman_image $image): int {}
 
 function pixman_image_get_width(pixman_image $image): int {}
 

@@ -9,7 +9,7 @@ if (! extension_loaded('pixman')) {
 /** The 32-bit pixels of a 32 bpp bits image, row by row (stride is width × 4 for images pixman allocates). */
 function px_pixels(pixman_image $image): array
 {
-    return array_values(unpack('V*', pixman_image_get_data($image)));
+    return array_values(unpack('V*', pixman_image_get_data($image, copy: true)));
 }
 
 function px_argb(int $w, int $h): pixman_image

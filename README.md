@@ -31,7 +31,7 @@ $red = pixman_image_create_solid_fill(new pixman_color(0x8000, 0, 0, 0x8000)); /
 pixman_image_composite32(PIXMAN_OP_SRC, $blue, null, $canvas, 0, 0, 0, 0, 0, 0, 4, 2);
 pixman_image_composite32(PIXMAN_OP_OVER, $red, null, $canvas, 0, 0, 0, 0, 1, 0, 2, 2);
 
-printf("%08x\n", unpack('V*', pixman_image_get_data($canvas))[2]); // ff80007f
+printf("%08x\n", unpack('V*', pixman_image_get_data($canvas, copy: true))[2]); // ff80007f
 
 // Regions: two overlapping rects, their union in three bands.
 $a = new pixman_region32();
@@ -114,8 +114,7 @@ pixman commit => 9cc163c9da0fb4da430641715313d95a6ec466d9
 - **Images** (`pixman_image`) come from the `pixman_image_create_*` functions and hold one pixman reference. `pixman_image_ref()` returns a second object, and `pixman_image_unref()` releases the object you pass.
 - **Regions** (`pixman_region16/32/64f`): `new` gives uninitialised storage, a `*_init*` function initialises it, and `*_fini` releases it. Region16 keeps pixman's legacy `pixman_region_*` names.
 - **Glyph caches:** `pixman_glyph_cache_create()`. Keys and glyph handles are ints, and a handle the cache no longer holds is refused.
-- **Pixels cross as strings.** `pixman_image_create_bits()` copies the string you give it (or pixman allocates when you pass `null`), and `pixman_image_get_data()` returns a copy. `pixman_fill()` and `pixman_blt()` work on strings in place, by reference.
-- **Addition:** `pixman_image_get_data_address()` returns the address pixman's `get_data` gives in C, for code such as a framebuffer driver that hands the bits to hardware.
+- **Pixels cross as strings.** `pixman_image_create_bits()` copies the string you give it (or pixman allocates when you pass `null`), or uses an address you pass as an int (trusted, never freed by the binding). `pixman_image_get_data()` returns the bits address by default; `copy: true` returns a string copy. `pixman_fill()` and `pixman_blt()` work on strings in place, by reference.
 - **Not bound:** `pixman_region_set_static_pointers`, which only exists to preserve the X server's ABI and would let a script corrupt every region in the process.
 
 ### Callbacks

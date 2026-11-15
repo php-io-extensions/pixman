@@ -1,5 +1,5 @@
 /* This is a generated file, edit the .stub.php file instead.
- * Stub hash: 445db6145de0f1e6aa3b76b99471716337047ce6 */
+ * Stub hash: 1872a31d36cfaada49cc749eda7a8bb045d52e40 */
 
 ZEND_BEGIN_ARG_WITH_RETURN_OBJ_INFO_EX(arginfo_pixman_image_create_solid_fill, 0, 1, pixman_image, 1)
 	ZEND_ARG_OBJ_INFO(0, color, pixman_color, 0)
@@ -32,7 +32,7 @@ ZEND_BEGIN_ARG_WITH_RETURN_OBJ_INFO_EX(arginfo_pixman_image_create_bits, 0, 5, p
 	ZEND_ARG_TYPE_INFO(0, format, IS_LONG, 0)
 	ZEND_ARG_TYPE_INFO(0, width, IS_LONG, 0)
 	ZEND_ARG_TYPE_INFO(0, height, IS_LONG, 0)
-	ZEND_ARG_TYPE_INFO(0, bits, IS_STRING, 1)
+	ZEND_ARG_TYPE_MASK(0, bits, MAY_BE_STRING|MAY_BE_LONG|MAY_BE_NULL, NULL)
 	ZEND_ARG_TYPE_INFO(0, rowstride_bytes, IS_LONG, 0)
 ZEND_END_ARG_INFO()
 
@@ -134,23 +134,22 @@ ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(arginfo_pixman_image_set_indexed, 0, 2, 
 	ZEND_ARG_OBJ_INFO(0, indexed, pixman_indexed, 1)
 ZEND_END_ARG_INFO()
 
-ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(arginfo_pixman_image_get_data, 0, 1, IS_STRING, 1)
+ZEND_BEGIN_ARG_WITH_RETURN_TYPE_MASK_EX(arginfo_pixman_image_get_data, 0, 1, MAY_BE_STRING|MAY_BE_LONG|MAY_BE_NULL)
+	ZEND_ARG_OBJ_INFO(0, image, pixman_image, 0)
+	ZEND_ARG_TYPE_INFO_WITH_DEFAULT_VALUE(0, copy, _IS_BOOL, 0, "false")
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(arginfo_pixman_image_get_width, 0, 1, IS_LONG, 0)
 	ZEND_ARG_OBJ_INFO(0, image, pixman_image, 0)
 ZEND_END_ARG_INFO()
 
-ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(arginfo_pixman_image_get_data_address, 0, 1, IS_LONG, 0)
-	ZEND_ARG_OBJ_INFO(0, image, pixman_image, 0)
-ZEND_END_ARG_INFO()
+#define arginfo_pixman_image_get_height arginfo_pixman_image_get_width
 
-#define arginfo_pixman_image_get_width arginfo_pixman_image_get_data_address
+#define arginfo_pixman_image_get_stride arginfo_pixman_image_get_width
 
-#define arginfo_pixman_image_get_height arginfo_pixman_image_get_data_address
+#define arginfo_pixman_image_get_depth arginfo_pixman_image_get_width
 
-#define arginfo_pixman_image_get_stride arginfo_pixman_image_get_data_address
-
-#define arginfo_pixman_image_get_depth arginfo_pixman_image_get_data_address
-
-#define arginfo_pixman_image_get_format arginfo_pixman_image_get_data_address
+#define arginfo_pixman_image_get_format arginfo_pixman_image_get_width
 
 ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(arginfo_pixman_filter_create_separable_convolution, 0, 9, IS_ARRAY, 1)
 	ZEND_ARG_TYPE_INFO(1, n_values, IS_LONG, 1)
@@ -273,7 +272,6 @@ ZEND_FUNCTION(pixman_image_get_component_alpha);
 ZEND_FUNCTION(pixman_image_set_accessors);
 ZEND_FUNCTION(pixman_image_set_indexed);
 ZEND_FUNCTION(pixman_image_get_data);
-ZEND_FUNCTION(pixman_image_get_data_address);
 ZEND_FUNCTION(pixman_image_get_width);
 ZEND_FUNCTION(pixman_image_get_height);
 ZEND_FUNCTION(pixman_image_get_stride);
@@ -318,7 +316,6 @@ static const zend_function_entry ext_functions[] = {
 	ZEND_FE(pixman_image_set_accessors, arginfo_pixman_image_set_accessors)
 	ZEND_FE(pixman_image_set_indexed, arginfo_pixman_image_set_indexed)
 	ZEND_FE(pixman_image_get_data, arginfo_pixman_image_get_data)
-	ZEND_FE(pixman_image_get_data_address, arginfo_pixman_image_get_data_address)
 	ZEND_FE(pixman_image_get_width, arginfo_pixman_image_get_width)
 	ZEND_FE(pixman_image_get_height, arginfo_pixman_image_get_height)
 	ZEND_FE(pixman_image_get_stride, arginfo_pixman_image_get_stride)

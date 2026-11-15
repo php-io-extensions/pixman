@@ -33,9 +33,9 @@ it('copies caller bits in and pixel data out', function (): void {
         ->and(pixman_image_get_stride($img))->toBe(8)
         ->and(pixman_image_get_depth($img))->toBe(32)
         ->and(pixman_image_get_format($img))->toBe(PIXMAN_a8r8g8b8)
-        ->and(pixman_image_get_data(px_solid(0)))->toBeNull()
-        ->and(pixman_image_get_data_address($img))->toBeGreaterThan(0)
-        ->and(pixman_image_get_data_address(px_solid(0)))->toBe(0);
+        ->and(pixman_image_get_data(px_solid(0), copy: true))->toBeNull()
+        ->and(pixman_image_get_data($img))->toBeGreaterThan(0)
+        ->and(pixman_image_get_data(px_solid(0)))->toBe(0);
 
     $nc = pixman_image_create_bits_no_clear(PIXMAN_x8r8g8b8, 1, 1, pack('V', 0x00abcdef), 4);
     expect(px_pixels($nc))->toBe([0x00abcdef]);
@@ -134,7 +134,7 @@ it('applies an alpha map, component alpha and dither settings', function (): voi
     $alpha = pixman_image_create_bits(PIXMAN_a8, 1, 1, null, 0);
     pixman_image_set_alpha_map($dst, $alpha, 0, 0);
     pixman_image_composite32(PIXMAN_OP_SRC, px_solid(0x80000000), null, $dst, 0, 0, 0, 0, 0, 0, 1, 1);
-    expect(ord(pixman_image_get_data($alpha)[0]))->toBe(0x80);
+    expect(ord(pixman_image_get_data($alpha, copy: true)[0]))->toBe(0x80);
     pixman_image_set_alpha_map($dst, null, 0, 0);
 
     $mask = px_argb(1, 1);
@@ -218,4 +218,16 @@ it('reports supported formats', function (): void {
         ->and(pixman_format_supported_source(PIXMAN_yv12))->toBeTrue()
         ->and(pixman_format_supported_source(-1))->toBeFalse();
     pixman_disable_out_of_bounds_workaround();
+});
+
+it('draws in caller memory given as an address, and returns the bits address by default', function () {
+    $owner = pixman_image_create_bits(PIXMAN_a8r8g8b8, 2, 2, null, 8);
+    $addr = pixman_image_get_data($owner);
+    $view = pixman_image_create_bits(PIXMAN_a8r8g8b8, 2, 2, $addr, 8);
+    $c = new pixman_color(); $c->red = 0xffff; $c->alpha = 0xffff;
+    $r = new pixman_rectangle16(); $r->x = 1; $r->y = 1; $r->width = 1; $r->height = 1;
+    pixman_image_fill_rectangles(PIXMAN_OP_SRC, $view, $c, 1, [$r]);
+    expect(pixman_image_get_data($view))->toBe($addr)
+        ->and(array_values(unpack('V*', pixman_image_get_data($owner, copy: true))))->toBe([0, 0, 0, 0xffff0000]);
+    expect(fn () => pixman_image_create_bits(PIXMAN_a8r8g8b8, 2, 2, 0, 8))->toThrow(ValueError::class);
 });

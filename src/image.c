@@ -163,16 +163,33 @@ static bool bits_size(zend_long format, zend_long w, zend_long h, zend_long stri
 static void create_bits(INTERNAL_FUNCTION_PARAMETERS, bool clear)
 {
 	zend_long format, w, h, stride;
-	zend_string *bits;
+	zend_string *bits = NULL;
+	zend_long address = 0;
+	bool address_null = true;
 	ZEND_PARSE_PARAMETERS_START(5, 5)
 		Z_PARAM_LONG(format)
 		Z_PARAM_LONG(w)
 		Z_PARAM_LONG(h)
-		Z_PARAM_STR_OR_NULL(bits)
+		Z_PARAM_STR_OR_LONG_OR_NULL(bits, address, address_null)
 		Z_PARAM_LONG(stride)
 	ZEND_PARSE_PARAMETERS_END();
 	if (!format_ok(format, 1) || !px_check_range(w, 0, INT32_MAX, 2) || !px_check_range(h, 0, INT32_MAX, 3)) RETURN_THROWS();
 	void *copy = NULL;
+	if (!bits && !address_null) {
+		/* A trusted address: pixman draws in the caller's memory, which must
+		 * stay valid for the image's life. The binding never frees it. */
+		size_t need;
+		if (address == 0) {
+			zend_argument_value_error(4, "must not be the address 0");
+			RETURN_THROWS();
+		}
+		if (!bits_size(format, w, h, stride, &need)) RETURN_THROWS();
+		pixman_image_t *borrowed = clear
+			? pixman_image_create_bits((pixman_format_code_t) format, (int) w, (int) h, (uint32_t *) (uintptr_t) address, (int) stride)
+			: pixman_image_create_bits_no_clear((pixman_format_code_t) format, (int) w, (int) h, (uint32_t *) (uintptr_t) address, (int) stride);
+		px_image_wrap(px_image_adopt(borrowed, NULL), return_value);
+		return;
+	}
 	if (bits) {
 		size_t need;
 		if (!bits_size(format, w, h, stride, &need)) RETURN_THROWS();
@@ -552,12 +569,16 @@ ZEND_FUNCTION(pixman_image_set_indexed)
 ZEND_FUNCTION(pixman_image_get_data)
 {
 	zval *i;
-	ZEND_PARSE_PARAMETERS_START(1, 1)
+	bool copy = false;
+	ZEND_PARSE_PARAMETERS_START(1, 2)
 		Z_PARAM_OBJECT_OF_CLASS(i, px_image_ce)
+		Z_PARAM_OPTIONAL
+		Z_PARAM_BOOL(copy)
 	ZEND_PARSE_PARAMETERS_END();
 	pixman_image_t *image = img(i, 1);
 	if (!image) RETURN_THROWS();
 	uint32_t *data = pixman_image_get_data(image);
+	if (!copy) RETURN_LONG((zend_long) (uintptr_t) data);
 	if (!data) RETURN_NULL();
 	int stride = pixman_image_get_stride(image);
 	int height = pixman_image_get_height(image);
@@ -566,17 +587,6 @@ ZEND_FUNCTION(pixman_image_get_data)
 		RETURN_STRINGL((const char *) data + (size_t) stride * (size_t) (height - 1), (size_t) (-stride) * (size_t) height);
 	}
 	RETURN_STRINGL((const char *) data, (size_t) stride * (size_t) height);
-}
-
-ZEND_FUNCTION(pixman_image_get_data_address)
-{
-	zval *i;
-	ZEND_PARSE_PARAMETERS_START(1, 1)
-		Z_PARAM_OBJECT_OF_CLASS(i, px_image_ce)
-	ZEND_PARSE_PARAMETERS_END();
-	pixman_image_t *image = img(i, 1);
-	if (!image) RETURN_THROWS();
-	RETURN_LONG((zend_long) (uintptr_t) pixman_image_get_data(image));
 }
 
 ZEND_FUNCTION(pixman_image_get_width)
