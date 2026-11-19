@@ -1,5 +1,5 @@
 /* This is a generated file, edit the .stub.php file instead.
- * Stub hash: da93a4738afb20c42d44bc2ea32e9da3b63c07ea */
+ * Stub hash: 8c7967ac5f601c63ec90918c2bd9c21e7bfe57b2 */
 
 ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(arginfo_pixman_sample_ceil_y, 0, 2, IS_LONG, 0)
 	ZEND_ARG_TYPE_INFO(0, y, IS_LONG, 0)
@@ -45,7 +45,7 @@ ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(arginfo_pixman_add_traps, 0, 5, IS_VOID,
 	ZEND_ARG_TYPE_INFO(0, x_off, IS_LONG, 0)
 	ZEND_ARG_TYPE_INFO(0, y_off, IS_LONG, 0)
 	ZEND_ARG_TYPE_INFO(0, ntrap, IS_LONG, 0)
-	ZEND_ARG_TYPE_INFO(0, traps, IS_ARRAY, 0)
+	ZEND_ARG_TYPE_MASK(0, traps, MAY_BE_ARRAY|MAY_BE_STRING, NULL)
 ZEND_END_ARG_INFO()
 
 ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(arginfo_pixman_add_trapezoids, 0, 5, IS_VOID, 0)
@@ -53,7 +53,7 @@ ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(arginfo_pixman_add_trapezoids, 0, 5, IS_
 	ZEND_ARG_TYPE_INFO(0, x_off, IS_LONG, 0)
 	ZEND_ARG_TYPE_INFO(0, y_off, IS_LONG, 0)
 	ZEND_ARG_TYPE_INFO(0, ntraps, IS_LONG, 0)
-	ZEND_ARG_TYPE_INFO(0, traps, IS_ARRAY, 0)
+	ZEND_ARG_TYPE_MASK(0, traps, MAY_BE_ARRAY|MAY_BE_STRING, NULL)
 ZEND_END_ARG_INFO()
 
 ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(arginfo_pixman_rasterize_trapezoid, 0, 4, IS_VOID, 0)
@@ -73,7 +73,7 @@ ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(arginfo_pixman_composite_trapezoids, 0, 
 	ZEND_ARG_TYPE_INFO(0, x_dst, IS_LONG, 0)
 	ZEND_ARG_TYPE_INFO(0, y_dst, IS_LONG, 0)
 	ZEND_ARG_TYPE_INFO(0, n_traps, IS_LONG, 0)
-	ZEND_ARG_TYPE_INFO(0, traps, IS_ARRAY, 0)
+	ZEND_ARG_TYPE_MASK(0, traps, MAY_BE_ARRAY|MAY_BE_STRING, NULL)
 ZEND_END_ARG_INFO()
 
 ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(arginfo_pixman_composite_triangles, 0, 10, IS_VOID, 0)
@@ -86,7 +86,7 @@ ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(arginfo_pixman_composite_triangles, 0, 1
 	ZEND_ARG_TYPE_INFO(0, x_dst, IS_LONG, 0)
 	ZEND_ARG_TYPE_INFO(0, y_dst, IS_LONG, 0)
 	ZEND_ARG_TYPE_INFO(0, n_tris, IS_LONG, 0)
-	ZEND_ARG_TYPE_INFO(0, tris, IS_ARRAY, 0)
+	ZEND_ARG_TYPE_MASK(0, tris, MAY_BE_ARRAY|MAY_BE_STRING, NULL)
 ZEND_END_ARG_INFO()
 
 ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(arginfo_pixman_add_triangles, 0, 5, IS_VOID, 0)
@@ -94,7 +94,7 @@ ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(arginfo_pixman_add_triangles, 0, 5, IS_V
 	ZEND_ARG_TYPE_INFO(0, x_off, IS_LONG, 0)
 	ZEND_ARG_TYPE_INFO(0, y_off, IS_LONG, 0)
 	ZEND_ARG_TYPE_INFO(0, n_tris, IS_LONG, 0)
-	ZEND_ARG_TYPE_INFO(0, tris, IS_ARRAY, 0)
+	ZEND_ARG_TYPE_MASK(0, tris, MAY_BE_ARRAY|MAY_BE_STRING, NULL)
 ZEND_END_ARG_INFO()
 
 ZEND_FUNCTION(pixman_sample_ceil_y);

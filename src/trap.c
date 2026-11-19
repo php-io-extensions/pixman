@@ -35,6 +35,34 @@ static pixman_image_t *alpha_image(zval *zv, uint32_t arg)
 	return image;
 }
 
+/*
+ * A const T * + count pair: an array of objects, read into a copy, or a string of count structs as C lays them out,
+ * read in place for the call (pixman keeps nothing). The structs to hand pixman, or NULL with an error raised; *copy
+ * is what the caller efrees.
+ */
+static const void *structs_arg(HashTable *arr, zend_string *packed, zend_long count, const px_struct *def, size_t size,
+	uint32_t count_arg, uint32_t arg, void **copy)
+{
+	*copy = NULL;
+	if (packed) {
+		size_t held = ZSTR_LEN(packed) / size;
+		if (count < 0 || (zend_ulong) count > held) {
+			zend_argument_value_error(count_arg, "must be between 0 and the number of %zu-byte structs the string holds (%zu), "
+				ZEND_LONG_FMT " given", size, held, count);
+			return NULL;
+		}
+		return ZSTR_VAL(packed);
+	}
+	if (!px_check_count(count, arr, count_arg)) return NULL;
+	*copy = safe_emalloc(count ? count : 1, size, 0);
+	if (!px_struct_array_read(def, arr, count, *copy, arg)) {
+		efree(*copy);
+		*copy = NULL;
+		return NULL;
+	}
+	return *copy;
+}
+
 static bool op_ok(zend_long op)
 {
 	if ((op >= PIXMAN_OP_CLEAR && op <= PIXMAN_OP_SATURATE) || (op >= PIXMAN_OP_DISJOINT_CLEAR && op <= PIXMAN_OP_DISJOINT_XOR)
@@ -205,46 +233,44 @@ ZEND_FUNCTION(pixman_add_traps)
 {
 	zval *i;
 	zend_long xo, yo, n;
-	HashTable *arr;
+	HashTable *arr = NULL;
+	zend_string *packed = NULL;
+	void *copy;
 	ZEND_PARSE_PARAMETERS_START(5, 5)
 		Z_PARAM_OBJECT_OF_CLASS(i, px_image_ce)
 		Z_PARAM_LONG(xo)
 		Z_PARAM_LONG(yo)
 		Z_PARAM_LONG(n)
-		Z_PARAM_ARRAY_HT(arr)
+		Z_PARAM_ARRAY_HT_OR_STR(arr, packed)
 	ZEND_PARSE_PARAMETERS_END();
 	pixman_image_t *image = alpha_image(i, 1);
-	if (!image || !i16(xo, 2) || !i16(yo, 3) || !px_check_count(n, arr, 4)) RETURN_THROWS();
-	pixman_trap_t *t = safe_emalloc(n ? n : 1, sizeof(*t), 0);
-	if (!px_struct_array_read(&px_trap, arr, n, t, 5)) {
-		efree(t);
-		RETURN_THROWS();
-	}
+	if (!image || !i16(xo, 2) || !i16(yo, 3) ) RETURN_THROWS();
+	const pixman_trap_t *t = structs_arg(arr, packed, n, &px_trap, sizeof(pixman_trap_t), 4, 5, &copy);
+	if (!t) RETURN_THROWS();
 	pixman_add_traps(image, (int16_t) xo, (int16_t) yo, (int) n, t);
-	efree(t);
+	if (copy) efree(copy);
 }
 
 ZEND_FUNCTION(pixman_add_trapezoids)
 {
 	zval *i;
 	zend_long xo, yo, n;
-	HashTable *arr;
+	HashTable *arr = NULL;
+	zend_string *packed = NULL;
+	void *copy;
 	ZEND_PARSE_PARAMETERS_START(5, 5)
 		Z_PARAM_OBJECT_OF_CLASS(i, px_image_ce)
 		Z_PARAM_LONG(xo)
 		Z_PARAM_LONG(yo)
 		Z_PARAM_LONG(n)
-		Z_PARAM_ARRAY_HT(arr)
+		Z_PARAM_ARRAY_HT_OR_STR(arr, packed)
 	ZEND_PARSE_PARAMETERS_END();
 	pixman_image_t *image = alpha_image(i, 1);
-	if (!image || !i16(xo, 2) || !px_check_range(yo, INT_MIN, INT_MAX, 3) || !px_check_count(n, arr, 4)) RETURN_THROWS();
-	pixman_trapezoid_t *t = safe_emalloc(n ? n : 1, sizeof(*t), 0);
-	if (!px_struct_array_read(&px_trapezoid, arr, n, t, 5)) {
-		efree(t);
-		RETURN_THROWS();
-	}
+	if (!image || !i16(xo, 2) || !px_check_range(yo, INT_MIN, INT_MAX, 3) ) RETURN_THROWS();
+	const pixman_trapezoid_t *t = structs_arg(arr, packed, n, &px_trapezoid, sizeof(pixman_trapezoid_t), 4, 5, &copy);
+	if (!t) RETURN_THROWS();
 	pixman_add_trapezoids(image, (int16_t) xo, (int) yo, (int) n, t);
-	efree(t);
+	if (copy) efree(copy);
 }
 
 ZEND_FUNCTION(pixman_rasterize_trapezoid)
@@ -268,7 +294,9 @@ ZEND_FUNCTION(pixman_composite_trapezoids)
 {
 	zend_long op, mf, xs, ys, xd, yd, n;
 	zval *s, *d;
-	HashTable *arr;
+	HashTable *arr = NULL;
+	zend_string *packed = NULL;
+	void *copy;
 	ZEND_PARSE_PARAMETERS_START(10, 10)
 		Z_PARAM_LONG(op)
 		Z_PARAM_OBJECT_OF_CLASS(s, px_image_ce)
@@ -279,26 +307,25 @@ ZEND_FUNCTION(pixman_composite_trapezoids)
 		Z_PARAM_LONG(xd)
 		Z_PARAM_LONG(yd)
 		Z_PARAM_LONG(n)
-		Z_PARAM_ARRAY_HT(arr)
+		Z_PARAM_ARRAY_HT_OR_STR(arr, packed)
 	ZEND_PARSE_PARAMETERS_END();
 	pixman_image_t *src = px_image_arg(s, 2);
 	pixman_image_t *dst = src ? px_image_arg(d, 3) : NULL;
 	if (!dst || !op_ok(op) || !mask_format_ok(mf, 4) || !px_check_range(xs, INT_MIN, INT_MAX, 5) || !px_check_range(ys, INT_MIN, INT_MAX, 6)
-			|| !px_check_range(xd, INT_MIN, INT_MAX, 7) || !px_check_range(yd, INT_MIN, INT_MAX, 8) || !px_check_count(n, arr, 9)) RETURN_THROWS();
-	pixman_trapezoid_t *t = safe_emalloc(n ? n : 1, sizeof(*t), 0);
-	if (!px_struct_array_read(&px_trapezoid, arr, n, t, 10)) {
-		efree(t);
-		RETURN_THROWS();
-	}
+			|| !px_check_range(xd, INT_MIN, INT_MAX, 7) || !px_check_range(yd, INT_MIN, INT_MAX, 8) ) RETURN_THROWS();
+	const pixman_trapezoid_t *t = structs_arg(arr, packed, n, &px_trapezoid, sizeof(pixman_trapezoid_t), 9, 10, &copy);
+	if (!t) RETURN_THROWS();
 	pixman_composite_trapezoids((pixman_op_t) op, src, dst, (pixman_format_code_t) mf, (int) xs, (int) ys, (int) xd, (int) yd, (int) n, t);
-	efree(t);
+	if (copy) efree(copy);
 }
 
 ZEND_FUNCTION(pixman_composite_triangles)
 {
 	zend_long op, mf, xs, ys, xd, yd, n;
 	zval *s, *d;
-	HashTable *arr;
+	HashTable *arr = NULL;
+	zend_string *packed = NULL;
+	void *copy;
 	ZEND_PARSE_PARAMETERS_START(10, 10)
 		Z_PARAM_LONG(op)
 		Z_PARAM_OBJECT_OF_CLASS(s, px_image_ce)
@@ -309,42 +336,38 @@ ZEND_FUNCTION(pixman_composite_triangles)
 		Z_PARAM_LONG(xd)
 		Z_PARAM_LONG(yd)
 		Z_PARAM_LONG(n)
-		Z_PARAM_ARRAY_HT(arr)
+		Z_PARAM_ARRAY_HT_OR_STR(arr, packed)
 	ZEND_PARSE_PARAMETERS_END();
 	pixman_image_t *src = px_image_arg(s, 2);
 	pixman_image_t *dst = src ? px_image_arg(d, 3) : NULL;
 	if (!dst || !op_ok(op) || !mask_format_ok(mf, 4) || !px_check_range(xs, INT_MIN, INT_MAX, 5) || !px_check_range(ys, INT_MIN, INT_MAX, 6)
-			|| !px_check_range(xd, INT_MIN, INT_MAX, 7) || !px_check_range(yd, INT_MIN, INT_MAX, 8) || !px_check_count(n, arr, 9)) RETURN_THROWS();
-	pixman_triangle_t *t = safe_emalloc(n ? n : 1, sizeof(*t), 0);
-	if (!px_struct_array_read(&px_triangle, arr, n, t, 10)) {
-		efree(t);
-		RETURN_THROWS();
-	}
+			|| !px_check_range(xd, INT_MIN, INT_MAX, 7) || !px_check_range(yd, INT_MIN, INT_MAX, 8) ) RETURN_THROWS();
+	const pixman_triangle_t *t = structs_arg(arr, packed, n, &px_triangle, sizeof(pixman_triangle_t), 9, 10, &copy);
+	if (!t) RETURN_THROWS();
 	pixman_composite_triangles((pixman_op_t) op, src, dst, (pixman_format_code_t) mf, (int) xs, (int) ys, (int) xd, (int) yd, (int) n, t);
-	efree(t);
+	if (copy) efree(copy);
 }
 
 ZEND_FUNCTION(pixman_add_triangles)
 {
 	zval *i;
 	zend_long xo, yo, n;
-	HashTable *arr;
+	HashTable *arr = NULL;
+	zend_string *packed = NULL;
+	void *copy;
 	ZEND_PARSE_PARAMETERS_START(5, 5)
 		Z_PARAM_OBJECT_OF_CLASS(i, px_image_ce)
 		Z_PARAM_LONG(xo)
 		Z_PARAM_LONG(yo)
 		Z_PARAM_LONG(n)
-		Z_PARAM_ARRAY_HT(arr)
+		Z_PARAM_ARRAY_HT_OR_STR(arr, packed)
 	ZEND_PARSE_PARAMETERS_END();
 	pixman_image_t *image = alpha_image(i, 1);
-	if (!image || !i32(xo, 2) || !i32(yo, 3) || !px_check_count(n, arr, 4)) RETURN_THROWS();
-	pixman_triangle_t *t = safe_emalloc(n ? n : 1, sizeof(*t), 0);
-	if (!px_struct_array_read(&px_triangle, arr, n, t, 5)) {
-		efree(t);
-		RETURN_THROWS();
-	}
+	if (!image || !i32(xo, 2) || !i32(yo, 3) ) RETURN_THROWS();
+	const pixman_triangle_t *t = structs_arg(arr, packed, n, &px_triangle, sizeof(pixman_triangle_t), 4, 5, &copy);
+	if (!t) RETURN_THROWS();
 	pixman_add_triangles(image, (int32_t) xo, (int32_t) yo, (int) n, t);
-	efree(t);
+	if (copy) efree(copy);
 }
 
 void px_trap_minit(void)
